@@ -36,26 +36,34 @@ public class SimpleHuffProcessor implements IHuffProcessor {
         frequencies[ALPH_SIZE] = 1;
         int preCompress = getFrequencies(new BitInputStream(in), frequencies);
         System.out.println(preCompress);
-        PriorityQ<TreeNode> queue = new PriorityQ<>();
-        for (int i = 0; i <= ALPH_SIZE; i++) {
-        	if (frequencies[i] > 0) {
-        		TreeNode temp = new TreeNode(i, frequencies[i]);
-        		queue.queue(temp);
-        	}
+        huffmanTree = new HuffmanTree(frequencies);
+        int compress = BITS_PER_INT * 2; //start at 32 because of the magic number is an int
+        //plus another int for the header format
+        //if the headerFormat is stre counts
+        //increment by the alpsize times bits per int
+        if (headerFormat == STORE_COUNTS){
+            compress += ALPH_SIZE * BITS_PER_INT;
+        }else if (headerFormat == STORE_TREE){
+            //if the headerFormat is store tree
+            //get number from huffman class
+            compress += huffmanTree.getEncodeSize() + 32;
+            //we add 32 bits to the total because store tree
+            //requires us to store the size of the tree
         }
-        //creating the tree
-        while (queue.size() >= 2) {
-            //make a new node with the second left and right nodes from the
-            //front of the list
-        	TreeNode temp = new TreeNode(queue.dequeue(), 0, queue.dequeue());
-        	queue.queue(temp);
-        }
-        TreeNode huffmanNode = queue.dequeue();
-        huffmanTree = new HuffmanTree(huffmanNode);
-        System.out.println(queue.size());
-        System.out.println(huffmanNode.getFrequency());
-        return preCompress;
+        compress += getCountOfData(frequencies);
+        return preCompress - compress;
     }
+
+    private int getCountOfData(int[] frequencies){
+        int total = 0;
+        for (int i : frequencies){
+            if (huffmanTree.codeMap.get(i) != null)
+                total += i * huffmanTree.codeMap.get(i).length();
+        }
+        return total;
+    }
+
+
 
     public void setViewer(IHuffViewer viewer) {
         myViewer = viewer;
@@ -72,11 +80,11 @@ public class SimpleHuffProcessor implements IHuffProcessor {
     }
     
     private int getFrequencies(BitInputStream bits, int[] frequencies) throws IOException {
-    	int total = 1;
+    	int total = 9;
         int inbits;
         while ((inbits = bits.readBits(BITS_PER_WORD)) != -1) {
         	frequencies[inbits]++;
-        	total++;
+        	total += 8;
         }
         bits.close();
         return total;
