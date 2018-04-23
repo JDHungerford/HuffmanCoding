@@ -24,6 +24,7 @@ import java.util.ArrayList;
 public class SimpleHuffProcessor implements IHuffProcessor {
 
     private IHuffViewer myViewer;
+    private HuffmanTree huffmanTree;
 
     public int compress(InputStream in, OutputStream out, boolean force) throws IOException {
         throw new IOException("compress is not implemented");
@@ -42,13 +43,17 @@ public class SimpleHuffProcessor implements IHuffProcessor {
         		queue.queue(temp);
         	}
         }
+        //creating the tree
         while (queue.size() >= 2) {
+            //make a new node with the second left and right nodes from the
+            //front of the list
         	TreeNode temp = new TreeNode(queue.dequeue(), 0, queue.dequeue());
         	queue.queue(temp);
         }
-        TreeNode huffmanTree = queue.dequeue();
+        TreeNode huffmanNode = queue.dequeue();
+        huffmanTree = new HuffmanTree(huffmanNode);
         System.out.println(queue.size());
-        System.out.println(huffmanTree.getFrequency());
+        System.out.println(huffmanNode.getFrequency());
         return preCompress;
     }
 
