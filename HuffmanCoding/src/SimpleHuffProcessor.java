@@ -25,17 +25,34 @@ public class SimpleHuffProcessor implements IHuffProcessor {
 
     private IHuffViewer myViewer;
     private HuffmanTree huffmanTree;
+    private int bitsSaved;
+    private int headerFormat;
+    private int[] frequencies;
 
     public int compress(InputStream in, OutputStream out, boolean force) throws IOException {
-        throw new IOException("compress is not implemented");
-        //return 0;
+        if (bitsSaved > 0 || force) {
+            BitInputStream bitInt = new BitInputStream(in);
+            BitOutputStream bitOut = new BitOutputStream(out);
+            bitOut.writeBits(BITS_PER_INT, MAGIC_NUMBER);
+            bitOut.writeBits(BITS_PER_INT, headerFormat);
+            if (headerFormat == STORE_COUNTS){
+                for (int i = 0; i < ALPH_SIZE; i++){
+                    if (huffmanTree.codeMap.get(i) != null)
+                        bitOut.writeBits(BITS_PER_INT, frequencies[i]);
+                }
+            } else if (headerFormat == STORE_TREE) {
+                bitOut.writeBits(BITS_PER_INT, huffmanTree.getEncodeSize());
+                Integer.to
+            }
+        }
+
     }
 
     public int preprocessCompress(InputStream in, int headerFormat) throws IOException {
-        int[] frequencies = new int[ALPH_SIZE + 1];
+        this.frequencies = new int[ALPH_SIZE + 1];
+        this.headerFormat = headerFormat;
         frequencies[ALPH_SIZE] = 1;
-        int preCompress = getFrequencies(new BitInputStream(in), frequencies);
-        System.out.println(preCompress);
+        int preCompress = getFrequencies(new BitInputStream(in));
         huffmanTree = new HuffmanTree(frequencies);
         int compress = BITS_PER_INT * 2; //start at 32 because of the magic number is an int
         //plus another int for the header format
@@ -50,15 +67,16 @@ public class SimpleHuffProcessor implements IHuffProcessor {
             //we add 32 bits to the total because store tree
             //requires us to store the size of the tree
         }
-        compress += getCountOfData(frequencies);
-        return preCompress - compress;
+        compress += getCountOfData();
+        bitsSaved = preCompress - compress;
+        return bitsSaved;
     }
 
-    private int getCountOfData(int[] frequencies){
+    private int getCountOfData(){
         int total = 0;
-        for (int i : frequencies){
+        for (int i = 0; i <= ALPH_SIZE; i++){
             if (huffmanTree.codeMap.get(i) != null)
-                total += i * huffmanTree.codeMap.get(i).length();
+                total += this.frequencies[i] * huffmanTree.codeMap.get(i).length();
         }
         return total;
     }
@@ -79,12 +97,12 @@ public class SimpleHuffProcessor implements IHuffProcessor {
             myViewer.update(s);
     }
     
-    private int getFrequencies(BitInputStream bits, int[] frequencies) throws IOException {
-    	int total = 9;
+    private int getFrequencies(BitInputStream bits) throws IOException {
+        int total = 0;
         int inbits;
         while ((inbits = bits.readBits(BITS_PER_WORD)) != -1) {
-        	frequencies[inbits]++;
-        	total += 8;
+        	this.frequencies[inbits]++;
+        	total += BITS_PER_WORD;
         }
         bits.close();
         return total;
