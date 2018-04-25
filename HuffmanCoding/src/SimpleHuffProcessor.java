@@ -19,7 +19,6 @@
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.ArrayList;
 
 public class SimpleHuffProcessor implements IHuffProcessor {
 
@@ -31,21 +30,57 @@ public class SimpleHuffProcessor implements IHuffProcessor {
 
     public int compress(InputStream in, OutputStream out, boolean force) throws IOException {
         if (bitsSaved > 0 || force) {
-            BitInputStream bitInt = new BitInputStream(in);
+            BitInputStream bitIn = new BitInputStream(in);
             BitOutputStream bitOut = new BitOutputStream(out);
+            //write the magic number
             bitOut.writeBits(BITS_PER_INT, MAGIC_NUMBER);
+            //write the header format
             bitOut.writeBits(BITS_PER_INT, headerFormat);
+            //write the storeCount header
             if (headerFormat == STORE_COUNTS){
-                for (int i = 0; i < ALPH_SIZE; i++){
-                    if (huffmanTree.codeMap.get(i) != null)
-                        bitOut.writeBits(BITS_PER_INT, frequencies[i]);
-                }
+                outputStdCount(bitOut);
             } else if (headerFormat == STORE_TREE) {
-                bitOut.writeBits(BITS_PER_INT, huffmanTree.getEncodeSize());
-                Integer.to
+                //else write the stdTree header
+                outputStdTree(bitOut);
             }
+            outputData(bitOut, bitIn);
+            bitIn.close();
+            bitOut.close();
         }
+        return 69;
+    }
 
+    private void outputStdCount(BitOutputStream bitOut){
+        for (int i = 0; i < ALPH_SIZE; i++){
+            //if (huffmanTree.codeMap.get(i) != null)//TODO get rid of this line
+            bitOut.writeBits(BITS_PER_INT, frequencies[i]);
+        }
+    }
+
+    private void outputStdTree(BitOutputStream bitOut){
+        bitOut.writeBits(BITS_PER_INT, huffmanTree.getEncodeSize());
+        for (TreeNode tNode : huffmanTree.getNodeList()){
+            int tValue = tNode.getValue();
+            //if the node is not a leaf
+            if (tValue == -1)//TODO possible final constant
+                //write a 0
+                bitOut.writeBits(1, 0);
+            else {//if the node is a leaf
+                //write a 1
+                bitOut.writeBits(1, 1);
+                //then write the value of the node
+                bitOut.writeBits(BITS_PER_INT + 1, tValue);
+            }
+
+        }
+    }
+
+    private void outputData(BitOutputStream bitOut, BitInputStream bitIn) throws IOException{
+        int inBits = 0;
+        while ((inBits = bitIn.readBits(BITS_PER_WORD)) != -1){
+            String code = huffmanTree.codeMap.get(inBits);
+            bitOut.writeBits(BITS_PER_INT, Integer.valueOf(code, 2));
+        }
     }
 
     public int preprocessCompress(InputStream in, int headerFormat) throws IOException {
@@ -69,6 +104,7 @@ public class SimpleHuffProcessor implements IHuffProcessor {
         }
         compress += getCountOfData();
         bitsSaved = preCompress - compress;
+
         return bitsSaved;
     }
 
