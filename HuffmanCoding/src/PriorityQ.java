@@ -10,7 +10,10 @@ public class PriorityQ<E extends Comparable<? super E>> {
 	}
 	
 	public void queue(E item) {
-		con.add(binSearch(item, 0, size - 1), item);
+		int index = 0;
+		while (index < con.size() && item.compareTo(con.get(index)) < 0)
+			index++;
+		con.add(index, item);
 		size++;
 	}
 	
@@ -28,13 +31,17 @@ public class PriorityQ<E extends Comparable<? super E>> {
 	private int binSearch(E target, int low, int high) {
 		if (low <= high) {
 			int mid = low + ((high - low) / 2);
-			if (con.get(mid).equals(target))
+			if (con.get(mid).compareTo(target) == 0)
 				return mid;
-			else if (con.get(mid).compareTo(target) > 0)
+			else if (con.get(mid).compareTo(target) < 0)
 				return binSearch(target, low, mid - 1);
 			else
 				return binSearch(target, mid + 1, high);
 		}
 		return low;
+	}
+
+	public String toString() {
+		return con.toString();
 	}
 }
