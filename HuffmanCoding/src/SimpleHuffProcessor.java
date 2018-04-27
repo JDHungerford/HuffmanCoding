@@ -27,7 +27,7 @@ import java.util.HashMap;
 
 public class SimpleHuffProcessor implements IHuffProcessor {
 	
-	final static int EMPTY_NODE = 0;
+	final static int EMPTY_NODE = -1;
 	
     private IHuffViewer myViewer;
     private HuffmanTree huffmanTree;
@@ -74,7 +74,7 @@ public class SimpleHuffProcessor implements IHuffProcessor {
         for (TreeNode node : huffmanTree.getNodeList()){
             int value = node.getValue();
             bits++;
-            if (value == 0) {
+            if (value == EMPTY_NODE) {
             	bitOut.writeBits(1, 0);
             } else {
             	bitOut.writeBits(1, 1);
@@ -138,8 +138,12 @@ public class SimpleHuffProcessor implements IHuffProcessor {
 
     private int getCountOfData(){
         int total = 0;
-        for (TreeNode node : huffmanTree.getNodeList())
-        	total += node.getValue() * node.getFrequency();
+        for (int i = 0; i < frequencies.length; i++) {
+        	String value = codeMap.get(i);
+        	if (value  != null) {
+        		total += frequencies[i] * value.length();
+        	}
+        }
         return total;
     }
 
