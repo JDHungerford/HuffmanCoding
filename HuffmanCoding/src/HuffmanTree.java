@@ -2,49 +2,45 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-public class HuffmanTree {
+public class HuffmanTree implements IHuffConstants{
     private TreeNode root;
     private int encodeSize;
-    public HashMap<Integer, String> codeMap;
 
     public HuffmanTree(int[] frequencies){
         PriorityQ<TreeNode> queue = new PriorityQ<>();
-
         for (int i = 0; i < frequencies.length; i++) {
             if (frequencies[i] > 0) {
                 TreeNode temp = new TreeNode(i, frequencies[i]);
                 queue.queue(temp);
-                encodeSize += 10;
+                encodeSize += BITS_PER_WORD + 2;
             }
         }
         //creating the tree
-        while (queue.size() >= 2) {
+        while (queue.size() > 1) {
             //make a new node with the second left and right nodes from the
             //front of the list
             TreeNode left = queue.dequeue();
             TreeNode right = queue.dequeue();
-            TreeNode temp = new TreeNode(left, -1, right);
+            TreeNode temp = new TreeNode(left, SimpleHuffProcessor.EMPTY_NODE, right);
             encodeSize++;
             queue.queue(temp);
         }
         root = queue.dequeue();
         //printTree(root, " ");
-        createMap();
-
     }
 
     public HuffmanTree(TreeNode root){
         this.root = root;
-        createMap();
     }
 
     //returns an encoded map resulting from the HuffmanTree
-    public void createMap(){
+    public HashMap<Integer, String> createMap(){
         if (root == null){
             throw new IllegalStateException("Tree is empty");
         }
-        codeMap = new HashMap<Integer, String>();
+        HashMap<Integer, String> codeMap = new HashMap<>();
         encode(codeMap, "", root);
+        return codeMap;
     }
 
     public int getEncodeSize(){
@@ -54,9 +50,9 @@ public class HuffmanTree {
     public int writeData(BitInputStream in, BitOutputStream out)throws IOException{
     	int bitCount = 0;
         int value;
-        while ((value = writeHelper(root, in, out)) != IHuffConstants.PSEUDO_EOF) {
-        	out.writeBits(IHuffConstants.BITS_PER_WORD, value);
-        	bitCount += IHuffConstants.BITS_PER_WORD;
+        while ((value = writeHelper(root, in, out)) != PSEUDO_EOF) {
+        	out.writeBits(BITS_PER_WORD, value);
+        	bitCount += BITS_PER_WORD;
         }
         in.close();
         out.close();
@@ -114,9 +110,7 @@ public class HuffmanTree {
     }
 
     public void printTree() {
-        if(root != null){
-            for (TreeNode node : getNodeList())
-            	System.out.println(node);
-        }
+    	for (TreeNode node : getNodeList())
+    		System.out.println(node);
     }
 }
