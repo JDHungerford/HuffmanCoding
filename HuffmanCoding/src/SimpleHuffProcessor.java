@@ -165,36 +165,37 @@ public class SimpleHuffProcessor implements IHuffProcessor {
             bitOut.close();
             return -1;
         }
+        outTree.printTree();
         uncompressedBits += outTree.writeData(bitIn, bitOut);
         return uncompressedBits;
     }
 
     private HuffmanTree outputStdTree(BitInputStream bitIn) throws IOException{
-        int size = bitIn.readBits(BITS_PER_INT);
-        int[] currentSize = new int[1];
-        TreeNode outRoot = makeTree(new TreeNode(-1, -1),
-                bitIn, currentSize, size);
+        int[] size = new int[] {bitIn.readBits(BITS_PER_INT) - 1};
+        TreeNode outRoot = makeTree(null, bitIn, size);
         return new HuffmanTree(outRoot);
     }
 
-    private TreeNode makeTree(TreeNode n, BitInputStream bitIn, int[] currentSize,
-                              int size)throws IOException{
-        if (currentSize[0] < size){
-            currentSize[0]++;
-            int nodeType = bitIn.readBits(1);
-            if (nodeType == 0){
-                TreeNode newLeft = new TreeNode(-1, -1);
-                n.setLeft(newLeft);
-                newLeft.setLeft(makeTree(newLeft, bitIn, currentSize, size));
-                newLeft.setRight(makeTree(newLeft, bitIn, currentSize, size));
-                return newLeft;
-            }else{
-                int value = bitIn.readBits(BITS_PER_WORD + 1);
-                currentSize[0] += BITS_PER_WORD + 1;
-                return new TreeNode(value, -1);
-            }
-        }
-        return null;
+    private TreeNode makeTree(TreeNode n, BitInputStream bitIn, int[] size)throws IOException{
+    	if (n == null) {
+    		if (size[0] > 0) {
+    			size[0]--;
+	    		int inBit = bitIn.readBits(1);
+	    		if (inBit == 0) {
+	    			TreeNode temp = new TreeNode(-1, -1);
+	    			temp.setLeft(makeTree(temp.getLeft(), bitIn, size));
+	    			temp.setRight(makeTree(temp.getRight(), bitIn, size));
+	    			return temp;
+	    		} else {
+	    			int value = bitIn.readBits(BITS_PER_WORD + 1);
+	    			size[0] -= BITS_PER_WORD + 1;
+	    			return new TreeNode(value, -1);
+	    		}
+    		} else
+    			return n;
+    	} else {
+    		return n;
+    	}
     }
 
     private void showString(String s){
@@ -215,8 +216,9 @@ public class SimpleHuffProcessor implements IHuffProcessor {
 
     private int[] inputStdCount(BitInputStream bitIn) throws IOException{
         //read the counts of the frequencies
-        int[] inFreq = new int[ALPH_SIZE];
-        for (int i = 0; i < inFreq.length; i++){
+        int[] inFreq = new int[ALPH_SIZE + 1];
+        inFreq[256]++;
+        for (int i = 0; i < inFreq.length - 1; i++){
             int frequency = bitIn.readBits(BITS_PER_INT);
             inFreq[i] = frequency;
         }

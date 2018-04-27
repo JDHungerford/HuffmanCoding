@@ -53,9 +53,8 @@ public class HuffmanTree {
 
     public int writeData(BitInputStream in, BitOutputStream out)throws IOException{
         int[] bitCounts = new int[1];
-        writeHelper(root, in, out, bitCounts);
+        
         in.close();
-        out.flush();
         out.close();
         return bitCounts[0];
     }
@@ -113,11 +112,10 @@ public class HuffmanTree {
         }
     }
 
-    private void printTree(TreeNode n, String spaces) {
-        if(n != null){
-            printTree(n.getRight(), spaces + "  ");
-            System.out.println(spaces + "[ " + n.getValue() + " , " + n.getFrequency() + "]");
-            printTree(n.getLeft(), spaces + "  ");
+    public void printTree() {
+        if(root != null){
+            for (TreeNode node : getNodeList())
+            	System.out.println(node);
         }
     }
 }
