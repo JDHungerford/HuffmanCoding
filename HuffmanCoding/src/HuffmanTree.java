@@ -52,27 +52,28 @@ public class HuffmanTree {
     }
 
     public int writeData(BitInputStream in, BitOutputStream out)throws IOException{
-        int[] bitCounts = new int[1];
-        
+    	int bitCount = 0;
+        int value;
+        while ((value = writeHelper(root, in, out)) != IHuffConstants.PSEUDO_EOF) {
+        	out.writeBits(IHuffConstants.BITS_PER_WORD, value);
+        	bitCount += IHuffConstants.BITS_PER_WORD;
+        }
         in.close();
         out.close();
-        return bitCounts[0];
+        return bitCount;
     }
 
-    private void writeHelper(TreeNode n, BitInputStream in, BitOutputStream out, int[] current)throws IOException{
-        int bit = in.readBits(IHuffConstants.BITS_PER_WORD);
-        if (bit != IHuffConstants.PSEUDO_EOF){
-            if (n.isLeaf()){
-                current[0]++;
-                out.writeBits(IHuffConstants.BITS_PER_WORD, n.getValue());
-            }else if (bit == 0){
-                current[0]++;
-                writeHelper(n.getLeft(), in, out, current);
-            }else{
-                current[0]++;
-                writeHelper(n.getRight(), in, out, current);
-            }
-        }
+    private int writeHelper(TreeNode n, BitInputStream in, BitOutputStream out)throws IOException{
+    	if (n.isLeaf()) {
+    		return n.getValue();
+    	} else {
+    		int bitIn = in.readBits(1);
+    		if (bitIn == 0) {
+    			return writeHelper(n.getLeft(), in, out);
+    		} else {
+    			return writeHelper(n.getRight(), in, out);
+    		}
+    	}
     }
 
     //helper method that encodes nodes into a tree map with its corresponding

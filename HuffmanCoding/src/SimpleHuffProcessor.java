@@ -165,8 +165,8 @@ public class SimpleHuffProcessor implements IHuffProcessor {
             bitOut.close();
             return -1;
         }
-        outTree.printTree();
         uncompressedBits += outTree.writeData(bitIn, bitOut);
+        System.out.println(uncompressedBits);
         return uncompressedBits;
     }
 
