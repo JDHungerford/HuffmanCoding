@@ -37,10 +37,10 @@ public class SimpleHuffProcessor implements IHuffProcessor {
             BitOutputStream bitOut = new BitOutputStream(out);
             //write the magic number
             bitOut.writeBits(BITS_PER_INT, MAGIC_NUMBER);
-            compressedBits += 32;
+            compressedBits += BITS_PER_INT;
             //write the header format
             bitOut.writeBits(BITS_PER_INT, headerFormat);
-            compressedBits += 32;
+            compressedBits += BITS_PER_INT;
             //write the storeCount header
             if (headerFormat == STORE_COUNTS){
                 compressedBits += outputStdCount(bitOut, compressedBits);
@@ -148,6 +148,7 @@ public class SimpleHuffProcessor implements IHuffProcessor {
         if (magicNumber != MAGIC_NUMBER){
             myViewer.showError("Error reading compressed file. \n" +
                     "File did not start with the huff magic number.");
+            bitIn.close();
             return -1;
         }
         headerFormat = bitIn.readBits(BITS_PER_INT);
@@ -160,6 +161,8 @@ public class SimpleHuffProcessor implements IHuffProcessor {
         }else{
             myViewer.showError("Error reading compressed file. \n" +
                     "Header format not recognized");
+            bitIn.close();
+            bitOut.close();
             return -1;
         }
         uncompressedBits += outTree.writeData(bitIn, bitOut);
@@ -172,7 +175,6 @@ public class SimpleHuffProcessor implements IHuffProcessor {
         TreeNode outRoot = makeTree(new TreeNode(-1, -1),
                 bitIn, currentSize, size);
         return new HuffmanTree(outRoot);
-
     }
 
     private TreeNode makeTree(TreeNode n, BitInputStream bitIn, int[] currentSize,
@@ -186,13 +188,11 @@ public class SimpleHuffProcessor implements IHuffProcessor {
                 newLeft.setLeft(makeTree(newLeft, bitIn, currentSize, size));
                 newLeft.setRight(makeTree(newLeft, bitIn, currentSize, size));
                 return newLeft;
-
-
             }else{
                 int value = bitIn.readBits(BITS_PER_WORD + 1);
+                currentSize[0] += BITS_PER_WORD + 1;
                 return new TreeNode(value, -1);
             }
-
         }
         return null;
     }

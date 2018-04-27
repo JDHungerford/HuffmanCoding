@@ -10,7 +10,7 @@ public class HuffmanTree {
     public HuffmanTree(int[] frequencies){
         PriorityQ<TreeNode> queue = new PriorityQ<>();
 
-        for (int i = 0; i <= IHuffConstants.ALPH_SIZE; i++) {
+        for (int i = 0; i < frequencies.length; i++) {
             if (frequencies[i] > 0) {
                 TreeNode temp = new TreeNode(i, frequencies[i]);
                 queue.queue(temp);
@@ -43,7 +43,7 @@ public class HuffmanTree {
         if (root == null){
             throw new IllegalStateException("Tree is empty");
         }
-        codeMap = new HashMap<>();
+        codeMap = new HashMap<Integer, String>();
         encode(codeMap, "", root);
     }
 
@@ -54,6 +54,9 @@ public class HuffmanTree {
     public int writeData(BitInputStream in, BitOutputStream out)throws IOException{
         int[] bitCounts = new int[1];
         writeHelper(root, in, out, bitCounts);
+        in.close();
+        out.flush();
+        out.close();
         return bitCounts[0];
     }
 
@@ -75,7 +78,7 @@ public class HuffmanTree {
 
     //helper method that encodes nodes into a tree map with its corresponding
     //path in the form of a string of 1 and 0
-    private void encode(HashMap codeMap, String path, TreeNode n){
+    private void encode(HashMap<Integer, String> codeMap, String path, TreeNode n){
         //if the node is a leaf we can now put the value and path into the map
         if (n.isLeaf()){
             codeMap.put(n.getValue(), path);
